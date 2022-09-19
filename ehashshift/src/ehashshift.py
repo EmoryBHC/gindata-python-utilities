@@ -3,45 +3,7 @@ import hashlib
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 import json
-import boto3
 import base64
-from botocore.exceptions import ClientError
-
-
-
-def get_secret():
-
-    secret_name = 'NeuroCEPSeeddev'
-    region_name = os.environ['AWS_REGION']
-
-    # Create a Secrets Manager client
-    session = boto3.session.Session()
-    client = session.client(
-        service_name='secretsmanager',
-        region_name=region_name
-    )
-  
-    try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
-    except ClientError as e:
-        if e.response['Error']['Code'] == 'DecryptionFailureException':
-            raise e
-        elif e.response['Error']['Code'] == 'InternalServiceErrorException':
-            raise e
-        elif e.response['Error']['Code'] == 'InvalidParameterException':
-            raise e
-        elif e.response['Error']['Code'] == 'InvalidRequestException':
-            raise e
-        elif e.response['Error']['Code'] == 'ResourceNotFoundException':
-            raise e
-    else:
-        if 'SecretString' in get_secret_value_response:
-            secret = get_secret_value_response['SecretString']
-        else:
-            secret = base64.b64decode(get_secret_value_response['SecretBinary'])
-        return secret
  
 def isNaN(val):
     """ Returns  true if value is nan.
@@ -53,9 +15,9 @@ def isNaN(val):
     return val != val
             
 
-def hashText(text):
+def hashText(text,seed_key):
     """ Hash a value . The value  will be hashed using sha256 algorithm
-    and  a seed from AWS secrets
+    and  a seed
 
     :param text: value to be hashed
     :return: hashed value
@@ -64,13 +26,11 @@ def hashText(text):
     if isNaN(text):
         return None
     else: 
-        secrets = json.loads(get_secret())
-        seed_key = secrets['Seed']
         seed = (seed_key.encode('utf-8')).hex()
         return hashlib.sha256(seed.encode() + str(text).encode()).hexdigest()
 
 
-def date_shift(in_date_to_shift) :
+def date_shift(in_date_to_shift,seed_key) :
     """ Shift a date from a string date.
 
     :param in_date_to_shift: date to be shifted
@@ -83,7 +43,7 @@ def date_shift(in_date_to_shift) :
     else:
         in_date_to_shift = str(in_date_to_shift)
         shift_base = 366
-        hashed_value = hashText(in_date_to_shift)
+        hashed_value = hashText(in_date_to_shift,seed_key)
         hash_list = [ord(x) for x in hashed_value]
         num_list =  [i for n, i in enumerate(hash_list) if i not in hash_list[:n]]
         num_list.sort()
