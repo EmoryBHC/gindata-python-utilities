@@ -5,7 +5,7 @@ from dateutil.parser import parse
 import json
 import base64
  
-def isNaN(val):
+def is_nan(val):
     """ Returns  true if value is nan.
 
     :param value: value to be checked
@@ -14,8 +14,7 @@ def isNaN(val):
     """
     return val != val
             
-
-def hashText(text,seed_key):
+def hash_text(text,seed):
     """ Hash a value . The value  will be hashed using sha256 algorithm
     and  a seed
 
@@ -23,27 +22,26 @@ def hashText(text,seed_key):
     :return: hashed value
     :rtype: string
     """
-    if isNaN(text):
+    if is_nan(text):
         return None
     else: 
-        seed = (seed_key.encode('utf-8')).hex()
-        return hashlib.sha256(seed.encode() + str(text).encode()).hexdigest()
+        seed_utf8 = (seed.encode('utf-8')).hex()
+        return hashlib.sha256(seed_utf8.encode() + str(text).encode()).hexdigest()
 
-
-def date_shift(in_date_to_shift,seed_key) :
+def date_shift(in_date_to_shift,seed) :
     """ Shift a date from a string date.
 
     :param in_date_to_shift: date to be shifted
     :return: shifted_date
     :rtype: datetime
     """
-    if isNaN(in_date_to_shift):
+    if is_nan(in_date_to_shift):
         return None
 
     else:
         in_date_to_shift = str(in_date_to_shift)
         shift_base = 366
-        hashed_value = hashText(in_date_to_shift,seed_key)
+        hashed_value = hash_text(in_date_to_shift,seed)
         hash_list = [ord(x) for x in hashed_value]
         num_list =  [i for n, i in enumerate(hash_list) if i not in hash_list[:n]]
         num_list.sort()
@@ -55,7 +53,6 @@ def date_shift(in_date_to_shift,seed_key) :
                 nrb_days = shift_base
         shifted_date = deserialize_date(in_date_to_shift) + relativedelta(days=nrb_days)
         return shifted_date 
-
 
 def deserialize_date(string):
     """Deserializes string to date.
